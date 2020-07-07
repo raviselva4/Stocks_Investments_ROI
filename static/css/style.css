@@ -1,0 +1,32 @@
+/* @media only screen and (max-width: 768px) { */
+.col-md-2 {
+  position: absolute;
+  max-width: 100%;
+}
+
+@media (max-width: 767.98px) {
+  .one {
+    height: 100%;
+  }
+
+  .well {
+    margin-top: 20px;
+  }
+
+  /* .col-md-5 {
+    padding: 0px;
+    margin-left: 20px;
+  }
+
+  .col-md-12 {
+    margin-right: -20px;
+  } */
+}
+
+/* .fixed-bottom {
+  font-size: small;
+  background-color: rgb(228, 228, 228);
+  color: white;
+  padding-top: 15px;
+  border-top: 6px solid rgb(2, 177, 180);
+} */
