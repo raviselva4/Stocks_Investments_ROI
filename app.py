@@ -3,16 +3,19 @@
 #################################################
 import pandas as pd
 import requests
+import os
 import time
 import warnings
 import logging
 import sqlalchemy
+from flask_sqlalchemy import SQLAlchemy
 from flask import Flask, render_template, jsonify
 from sqlalchemy import create_engine, MetaData
 warnings.filterwarnings('ignore')
 from pprint import pprint
-from config import *
+# from config import *
 logger = logging.Logger('catch_all')
+stock_api_key = "S2Q31T0C29CO77S1"
 
 # Stock data url connection requirements
 url = "https://www.alphavantage.co/query?"
@@ -21,8 +24,16 @@ output="&outputsize=full"
 key = f"&apikey={stock_api_key}"
 
 # PostgreSQL connection and creating session
-connect_str = 'postgresql://postgres:'+db_pass+'@'+db_host+':'+db_port+'/'+db_name
-engine = create_engine(connect_str)
+#  this is local postgres setup ----------- going to block and using Heroku environment....
+# connect_str = 'postgresql://postgres:'+db_pass+'@'+db_host+':'+db_port+'/'+db_name
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', '')
+
+# Remove tracking modifications
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+db = SQLAlchemy(app)
+
+engine = create_engine(db)
 connection = engine.connect()
 
 # Flask Setup
