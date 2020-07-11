@@ -1,14 +1,16 @@
 # project-2
 
-Stock Trends and prediction of ROI
+##Stock_Investments_ROI
 
-## Setup
+### Setup
 
 1) Create a postgres database using pgAdmin4
 
 2) Create an account with https://www.alphavantage.co/ and get an free API key for stock data download 
-    (you may also use old data from data folder and import the csv files to your local)
-
+    (or) 
+   You may also use backup dump file (data/stock_database_fullbackup.sql) from the data folder and restore the database to your local using pgAdmin tool. 
+   (Data as of 07/09/2020)
+    
 3) Git clone the repository to your local
 
 4) Create a "config.py" file and input the following:
