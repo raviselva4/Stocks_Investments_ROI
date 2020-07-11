@@ -18,10 +18,10 @@
 
   <div class="container">
     <div class="row">
-      <div id="one" class="col-md-12 jumbotron text-center" style="height: 150px;">
+      <div id="one" class="col-md-12 jumbotron text-center" style="height: 170px;">
         <h2>Stock Trends (S&P 500) and Prediction of Return on Investment (ROI)</h2>
         <p class="lead">Use the interactive charts below to explore the stock trends</p>
-        <a class="lead btn btn-primary btn-lg" href="#" role="button">Get Prediction NOW</a>
+        <a class="lead btn btn-primary btn-lg" href="{{ url_for('prediction') }}" role="button">Get Prediction NOW</a>
         <!-- <a class=”btn btn-primary” href=”#” role=”button”>Get Prediction NOW</a> -->
       </div>
     </div>
@@ -55,16 +55,9 @@
     </div>
   </div>
 
-  <!-- <footer class=”container mt-4">
-    <div class=”row”>
-    <div class=”col”>
-      <p class="text-center"> &copy; Copyright Coding Bootcamp 2020 </p>
-    </div>
-    </div>
-  </footer> -->
   <footer>
-  <nav class="navbar fixed-bottom "></nav>
-    <p class="text-center"> &copy; Copyright Coding Bootcamp 2020 </p>
+  <nav class="fixed-bottom font-small"></nav>
+    <div class="text-center font-small"> &copy; Copyright Coding Bootcamp 2020 </div>
   </nav>
 </footer>
 

@@ -5,11 +5,6 @@ vcont.classed("container-fluid", true);
 
 // Remove onchange attribute to fix console error
 
-// var onchg = d3.select("#selSector");
-// var newchg = onchg.attr("onchange", null);
-// var onchg2 = d3.select("#selSymbol");
-// var newchg2 = onchg.attr("onchange", null);
-
 function getColor() {
   var newColor = '#'+Math.floor(Math.random()*16777215).toString(16);
   return (newColor);
@@ -71,7 +66,9 @@ function showFunnel(inputSector) {
     }
 
     Plotly.newPlot("funnel", data, layout, {displayModeBar: false});
+    // Plotly.newPlot("funnel", data, layout);
     // Plotly.newPlot("funnel", data, layout, config);
+    // CHECK LATER RESTYLE METHOD.............*************
   });
 }
 
@@ -317,7 +314,7 @@ d3.json(url).then(function(sectorData) {
     };
 
     showSymbol(sectors[0]);
-    showFunnel(sectors[0])
+    showFunnel(sectors[0]);
 
     sectorSelect.on("change", function() {
     var sectorVal = sectorSelect.property("value");
