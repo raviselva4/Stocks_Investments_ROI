@@ -1,6 +1,4 @@
-# project-2
-
-##Stock_Investments_ROI
+# Stock_Investments_ROI
 
 ### Setup
 
