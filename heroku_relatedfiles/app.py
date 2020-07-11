@@ -3,19 +3,19 @@
 #################################################
 import pandas as pd
 import requests
+import os
 import time
 import warnings
 import logging
 import sqlalchemy
+from flask_sqlalchemy import SQLAlchemy
 from flask import Flask, render_template, jsonify
 from sqlalchemy import create_engine, MetaData
 warnings.filterwarnings('ignore')
 from pprint import pprint
-from config import *
+# from config import *
 logger = logging.Logger('catch_all')
-
-# Flask Setup
-app = Flask(__name__)
+stock_api_key = "S2Q31T0C29CO77S1"
 
 # Stock data url connection requirements
 url = "https://www.alphavantage.co/query?"
@@ -24,9 +24,20 @@ output="&outputsize=full"
 key = f"&apikey={stock_api_key}"
 
 # PostgreSQL connection and creating session
-connect_str = 'postgresql://postgres:'+db_pass+'@'+db_host+':'+db_port+'/'+db_name
-engine = create_engine(connect_str)
+#  this is local postgres setup ----------- going to block and using Heroku environment....
+# connect_str = 'postgresql://postgres:'+db_pass+'@'+db_host+':'+db_port+'/'+db_name
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', '')
+
+# Remove tracking modifications
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+db = SQLAlchemy(app)
+
+engine = create_engine(db)
 connection = engine.connect()
+
+# Flask Setup
+app = Flask(__name__)
 
 #################################################
 # Flask Routes
@@ -37,23 +48,15 @@ def home():
     print("Server received request for 'Home' page...")
     return render_template("index.html")
 
-# To call prediction page
-@app.route("/prediction")
-def prediction():
-    print("Server received request for 'Prediction' page...")
-    return render_template("prediction.html")
 
-# To webscrape sp500 stocks and push it to the postgres database
 @app.route("/sp500")
 def sp500():
     print("Server received request for 'sp500' data collection page...")
     surl = "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies"
     tables = pd.read_html(surl)
-    print("Completed web scraping...")
     df = tables[0]
     df.columns= ['symbol', 'security', 'SEC_filings', 'gics_sector', 'gics_sub_industry','headquarters_location', 'date_first_added', 'cik', 'founded']
     del df['SEC_filings']
-    df['symbol'] = df['symbol'].replace({'BF.B':'BFB'})
     data_type = {"symbol": sqlalchemy.types.VARCHAR(length=10), 
              "security": sqlalchemy.types.VARCHAR(),
              "gics_sector": sqlalchemy.types.VARCHAR(),
@@ -64,13 +67,11 @@ def sp500():
              "cik": sqlalchemy.types.Integer(),
              "founded": sqlalchemy.types.VARCHAR(length=50)
             }
-    print("Before pushing into postgres database......")
-    df.to_sql(name="sp500", con=engine, if_exists='replace', index=False, dtype=data_type)
-    count = pd.read_sql("select count(*) from sp500", connection)
+    df.to_sql(name="sp500_test", con=engine, if_exists='replace', index=False, dtype=data_type)
     return (
         f"Records Pushed to Postgres database...<br/>"
         )
-# To get daily stock data from alphavantage website using API and push it to postgres database
+
 @app.route("/getstock_data")
 def stockdata():
     print("Server received request for 'getstock_data' data collection page...")
@@ -155,10 +156,9 @@ def stockdata():
         f" <br/>"
         f"Here are the list of symbol(s) ends with error: {err_symbol}  <br/>"
         f" <br/>"
-        f"If you see any errors like 'Expecting value: line 1 column 1 (char 0)' then you may rerun the same route after some time until you get no errors.  <br/>"
+        f"You may ignore data collection for the symbol 'BKB'. But if see more then one row in the error then you may rerun this until you get one error.  <br/>"
     )
 
-# To pull all sectors from postgres database
 @app.route("/sector")
 def sector():
     print("Server received request for 'sector' page...")
@@ -168,7 +168,6 @@ def sector():
         sector.append(srows['gics_sector'])
     return jsonify(sector)
 
-#  To pull all symbols from postgres database
 @app.route("/sector_symbol")
 def sector_symbol():
     print("Server received request for 'sector_symbol' page...")
@@ -184,7 +183,6 @@ def sector_symbol():
     #                                         ) t ")
     #     return jsonify(symbol_json)
 
-#  To pull all daily data from postgres database
 @app.route("/daily_data/<vsymbol>")
 def daily_data(vsymbol):
     print("Server received request for 'daily_data' page...")
@@ -194,7 +192,6 @@ def daily_data(vsymbol):
     rsdaily = sdaily.to_json(orient='records', lines=False)
     return (rsdaily)
 
-#  To pull sector performance based on year input from postgres database
 @app.route("/sector_performance/<year>")
 def sector_performace(year):
     print("Server received request for 'sector_performance' page...")
@@ -203,64 +200,36 @@ def sector_performace(year):
                 where b.stock_symbol = a.symbol
                   and b.year = %s
                 group by gics_sector
-                order by avg(cagr) desc"""
+                order by abs(avg(cagr)) desc"""
     sectorPerf = pd.read_sql(sql_stat, connection, params=(year,))
     result = sectorPerf.to_json(orient='records', lines=False)
     return(result)
 
-# To pull all data from stock_performance from postgres database  
-@app.route("/stock_performance")
-def stock_performace():
-    print("Server received request for 'stock_performance' page...")
-    sql_stat = """select a.gics_sector, a.security, a.symbol, b.year, b.close, b.cagr
-                from sp500 a, stock_performance b
-                where b.stock_symbol = a.symbol 
-                order by year"""
-    symbolPerf = pd.read_sql(sql_stat, connection)
-    # params=({"year":year,"sector": sector},)
-    result = symbolPerf.to_json(orient='records', lines=False)
-    return(result)
-
-# To pull symbol prediction with security input from postgres database
-# @app.route("/security_prediction/<year>/<security>")
-@app.route("/symbol_prediction/<security>")
-def symbol_prediction(security):
+@app.route("/symbol_performance/<year>/<sector>")
+def symbol_performace(year,sector):
     print("Server received request for 'symbol_performance' page...")
-    sql_stat = """select a.gics_sector, a.symbol, b.cagr cagr
-                from sp500 a, stock_performance b
-                where b.stock_symbol = a.symbol
-                and b.year = 10
-                and a.symbol = %s
-                order by cagr desc"""
-    symbolPerf = pd.read_sql(sql_stat, connection, params=(security,))
-    # params=({"year":year,"sector": sector},)
-    result = symbolPerf.to_json(orient='records', lines=False)
-    return(result)
-
-# To pull all security performance from postgres database
-@app.route("/allsecurity_performance")
-def allsecurity_performance():
-    print("Server received request for 'symbol_performance' page...")
-    sql_stat = """select a.gics_sector, a.security, a.symbol, b.close, b.cagr
-                from sp500 a, stock_performance b
-                where b.stock_symbol = a.symbol
-                and b.year = 10
-                order by cagr desc"""
-    symbolPerf = pd.read_sql(sql_stat, connection)
-    # params=({"year":year,"sector": sector},)
-    result = symbolPerf.to_json(orient='records', lines=False)
-    return(result)
-
-# To pull all top 5 performers from postgres database based on sector
-@app.route("/top_performer5/<year>/<sector>")
-def top_performer5(year,sector):
-    print("Server received request for 'symbol_performance' page...")
-    sql_stat = """select a.gics_sector, a.symbol, b.cagr
+    sql_stat = """select a.gics_sector, a.symbol, round(avg(b.cagr),2) cagr
                 from sp500 a, stock_performance b
                 where b.stock_symbol = a.symbol
                 and b.year = %s
                 and a.gics_sector = %s
-                order by cagr desc
+                group by a.gics_sector, a.symbol
+                order by abs(avg(cagr)) desc"""
+    symbolPerf = pd.read_sql(sql_stat, connection, params=(year, sector,))
+    # params=({"year":year,"sector": sector},)
+    result = symbolPerf.to_json(orient='records', lines=False)
+    return(result)
+
+@app.route("/top_performer5/<year>/<sector>")
+def top_performer5(year,sector):
+    print("Server received request for 'symbol_performance' page...")
+    sql_stat = """select a.gics_sector, a.symbol, round(avg(b.cagr),2) cagr
+                from sp500 a, stock_performance b
+                where b.stock_symbol = a.symbol
+                and b.year = %s
+                and a.gics_sector = %s
+                group by a.gics_sector, a.symbol
+                order by avg(cagr) desc
                 limit 5"""
     symbolPerf = pd.read_sql(sql_stat, connection, params=(year, sector,))
     # params=({"year":year,"sector": sector},)
