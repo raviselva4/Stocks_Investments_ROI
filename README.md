@@ -21,7 +21,7 @@
 
 5) Run Python Flask http://127.0.0.1:5000/sp500 to download latest S&P 500 stocks
 
-6) Run Python Flask http://127.0.0.1:5000/sp500 to download latest stock data from alphavantage website
+6) Run Python Flask http://127.0.0.1:5000/getstock_data to download latest stock data from alphavantage website
     (takes 2-3 hours to download all 505 stocks with 20 years of data)
 
 Okay, now you are ready to explore the stock trends and the prediction using our app, enjoy!!!
