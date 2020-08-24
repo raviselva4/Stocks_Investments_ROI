@@ -1,5 +1,9 @@
 # Stock_Investments_ROI
 
+### Overview of the project
+
+Predictive ROI for investors based on historical stock performance. Used 10 years of historical data from S&P 500 to predict the stock performance based on investor choice (5 or 10 years).
+
 ### Setup
 
 1) Create a postgres database using pgAdmin4
